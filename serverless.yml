@@ -1,0 +1,90 @@
+service: aws-test-project
+
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  lambdaHashingVersion: 20201221
+  environment:
+    TABLE_NAME: UsersTable
+    DEPLOY_REGION: us-east-1
+    SQS_URL: { Ref: TestSQS }
+  iamRoleStatements:
+  - Effect: Allow
+    Action:
+      - dynamodb:DescribeTable
+      - dynamodb:Query
+      - dynamodb:Scan
+      - dynamodb:GetItem
+      - dynamodb:PutItem
+      - dynamodb:UpdateItem
+      - dynamodb:DeleteItem
+    Resource:
+      - "Fn::GetAtt": [TestTable , Arn]
+
+  - Effect: Allow
+    Action:
+      - sqs:SendMessage
+      - sqs:DeleteMessage
+      - sqs:GetQueueAttributes
+    Resource:
+      - Fn::GetAtt: [TestSQS , Arn]
+
+    
+resources:
+  Resources:
+    TestTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.TABLE_NAME}
+        AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: noteId
+          AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+          - AttributeName: noteId
+            KeyType: RANGE
+        # Set the capacity to auto-scale
+        BillingMode: PAY_PER_REQUEST
+    TestSQS:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: TestSQS
+
+functions:
+  hello:
+    handler: handler.hello
+    environment:
+            QUEUE_URL: ${self:provider.environment.SQS_URL}
+            DEPLOY_REGION: ${self:provider.environment.DEPLOY_REGION}
+    events:
+        - http:
+            path: hello
+            method: POST
+            cors: true
+  messages:
+    handler: handler.retrive
+    environment:
+            TABLE_NAME: ${self:provider.environment.TABLE_NAME}
+            DEPLOY_REGION: ${self:provider.environment.DEPLOY_REGION}
+    events:
+        - http:
+            path: messages
+            method: GET
+            cors: true
+  saveMessages:
+    handler: handler.saveMessage
+    environment:
+            TABLE_NAME: ${self:provider.environment.TABLE_NAME}
+            DEPLOY_REGION: ${self:provider.environment.DEPLOY_REGION}
+    events:
+        - sqs:
+            arn:
+              Fn::GetAtt:
+                - TestSQS
+                - Arn
+plugins:
+  - serverless-offline

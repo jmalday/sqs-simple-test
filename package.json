@@ -1,0 +1,23 @@
+{
+    "name": "localstack-simple-test",
+    "version": "1.0.0",
+    "description": "",
+    "main": "index.js",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "keywords": [
+        "localstack"
+    ],
+    "author": "jmalday",
+    "license": "ISC",
+    "dependencies": {
+        "aws-sdk": "2.1074.0"
+    },
+    "devDependencies": {
+        "serverless-lift": "^1.12.1",
+        "serverless-offline": "^8.5.0",
+        "serverless-offline-sqs": "^6.0.0",
+        "serverless-webpack": "^5.6.1"
+    }
+}
